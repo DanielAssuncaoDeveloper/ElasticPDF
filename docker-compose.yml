@@ -1,0 +1,56 @@
+services:
+
+  elasticpdf.api:
+    build:
+      context: .
+      dockerfile: ElasticPDF.Api/Dockerfile
+    container_name: elasticpdf-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_ENVIRONMENT=Development
+    ports:  
+      - "5000:8080"  # HTTP
+      - "5001:8081"  # HTTPS
+    depends_on:
+      - elasticsearch
+      - rabbitmq
+      - minio
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.2
+    container_name: elasticpdf-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: elasticpdf-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  minio:
+    image: minio/minio
+    container_name: elasticpdf-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123456
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  elasticsearch_data:
+  rabbitmq_data:
+  minio_data:
