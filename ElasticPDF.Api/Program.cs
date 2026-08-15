@@ -1,17 +1,33 @@
+using Elastic.Clients.Elasticsearch;
+using ElasticPDF.Infrastructure.Elasticsearch;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-var app = builder.Build();
+builder.Configuration
+    .AddJsonFile("appsettings.json")
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddEnvironmentVariables();
 
-// Configure the HTTP request pipeline.
+builder.Services.AddSingleton(x =>
+    new ElasticsearchClient(
+        new Uri(builder.Configuration.GetSection("Elasticsearch:Url").Value!)
+        ));
+
+builder.Services.AddScoped<ElasticsearchInitializer>();
+
+var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var elasticsearchInitializer = scope.ServiceProvider.GetRequiredService<ElasticsearchInitializer>();
+    await elasticsearchInitializer.InitializeAsync();
 }
 
 app.UseHttpsRedirection();
