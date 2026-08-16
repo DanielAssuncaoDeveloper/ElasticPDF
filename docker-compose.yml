@@ -1,6 +1,6 @@
 services:
 
-  elasticpdf.api:
+  elasticpdf-api:
     build:
       context: .
       dockerfile: ElasticPDF.Api/Dockerfile
@@ -8,9 +8,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - DOTNET_ENVIRONMENT=Development
+
     ports:  
-      - "5000:8080"  # HTTP
-      - "5001:8081"  # HTTPS
+      - "8080:8080"  # HTTP
+      - "8081:8081"  # HTTPS
     depends_on:
       - elasticsearch
       - rabbitmq
@@ -44,6 +45,8 @@ services:
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123456
+      MINIO_NOTIFY_WEBHOOK_ENABLE_primary: on
+      MINIO_NOTIFY_WEBHOOK_ENDPOINT_primary: http://elasticpdf-api:8080/webhook/minio
     ports:
       - "9000:9000"
       - "9001:9001"
