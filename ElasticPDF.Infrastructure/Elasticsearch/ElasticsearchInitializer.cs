@@ -1,12 +1,14 @@
 ﻿using Elastic.Clients.Elasticsearch;
-using ElasticPDF.Infrastructure.Elasticsearch.Document;
-using IndexManagement = Elastic.Clients.Elasticsearch.IndexManagement;
+using ElasticPDF.Infrastructure.Elasticsearch.Entities.Document;
+using ElasticPDF.Infrastructure.Elasticsearch.Mapping;
+using Polly;
 
 namespace ElasticPDF.Infrastructure.Elasticsearch
 {
     public class ElasticsearchInitializer
     {
         private readonly ElasticsearchClient _client;
+        private IReadOnlyCollection<IEntityMapping> _mappings = [ new DocumentMapping() ];
 
         public ElasticsearchInitializer (ElasticsearchClient client)
         {
@@ -15,31 +17,34 @@ namespace ElasticPDF.Infrastructure.Elasticsearch
 
         public async Task InitializeAsync()
         {
-            bool isSuccess = false;
-            int remainingAttempts = 10;
-            IndexManagement.ExistsResponse? existsResponse = null;
+            bool isElasticsearchRunning = await PingElasticsearchAsync();
+            if (!isElasticsearchRunning)
+                throw new Exception("Elasticsearch is not running.");
 
-            while (!isSuccess && remainingAttempts != 0)
-            {
-                existsResponse = await _client.Indices.ExistsAsync(DocumentIndex.Name);
-                isSuccess = existsResponse.IsValidResponse;
+            await EnsureEntityIndexes();
+        }
 
-                if (!isSuccess)
+        private Task<bool> PingElasticsearchAsync() =>
+            Policy.HandleResult<bool>(isValidResponse => !isValidResponse)
+                .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)))
+                .ExecuteAsync(async () =>
                 {
-                    remainingAttempts--;
-                    await Task.Delay(750 * Math.Abs(remainingAttempts - 10) + 1);
+                    var pingResponse = await _client.PingAsync();
+                    return pingResponse.IsValidResponse;
+                });
+
+        private async Task EnsureEntityIndexes()
+        {
+            foreach (var map in _mappings)
+            {
+                var existsResponse = await _client.Indices.ExistsAsync(map.EntityIndex.Name);
+                if (!existsResponse.Exists)
+                {
+                    var createResponse = await _client.Indices.CreateAsync(map.EntityIndex.Name, c => map.Configure(c));
+                    if (!createResponse.IsValidResponse)
+                        throw new Exception("We were unable to create the Elasticsearch indexes.");
                 }
             }
-
-            if (existsResponse is null || !isSuccess)
-                throw new Exception("We were unable to create the Elasticsearch indexes.");
-
-            if (existsResponse.Exists)
-                return;
-
-            var createResponse = await _client.Indices.CreateAsync(DocumentIndex.Name, c => c.Configure());
-            if (!createResponse.IsSuccess())
-                throw new Exception("We were unable to create the Elasticsearch indexes.");
         }
     }
 }

@@ -1,12 +1,13 @@
 ﻿using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Mapping;
+using ElasticPDF.Infrastructure.Elasticsearch.Mapping;
 
-namespace ElasticPDF.Infrastructure.Elasticsearch.Document
+namespace ElasticPDF.Infrastructure.Elasticsearch.Entities.Document
 {
-    internal static class DocumentMapping
+    public class DocumentMapping : IEntityMapping
     {
-        public static CreateIndexRequestDescriptor Configure(
-            this CreateIndexRequestDescriptor descriptor)
+        public IEntityIndex EntityIndex { get; } = new DocumentIndex();
+        public CreateIndexRequestDescriptor Configure(CreateIndexRequestDescriptor descriptor)
         {
             return descriptor.Mappings(m => m
                 .Dynamic(DynamicMapping.False)
