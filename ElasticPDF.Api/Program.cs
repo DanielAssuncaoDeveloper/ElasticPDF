@@ -15,7 +15,6 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddEnvironmentVariables();
 
-
 builder.Services.AddMinio(configureClient => configureClient
             .WithEndpoint("minio:9000")
             .WithSSL(false)
@@ -28,7 +27,7 @@ builder.Services.AddSingleton(x =>
         ));
 
 builder.Services.AddScoped<ElasticsearchInitializer>();
-builder.Services.AddScoped<MinIOInitializer>();
+builder.Services.AddScoped<MinioInitializer>();
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
@@ -40,14 +39,12 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
-    var elasticsearchInitializer = scope.ServiceProvider.GetRequiredService<ElasticsearchInitializer>();
-    await elasticsearchInitializer.InitializeAsync();
-
-    var minIOInitializer = scope.ServiceProvider.GetRequiredService<MinIOInitializer>();
-    await minIOInitializer.InitializeAsync();
+    await Task.WhenAll(
+        scope.ServiceProvider.GetRequiredService<ElasticsearchInitializer>().InitializeAsync(),
+        scope.ServiceProvider.GetRequiredService<MinioInitializer>().InitializeAsync()
+    );
 }
 
-//app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

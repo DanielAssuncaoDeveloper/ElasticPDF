@@ -1,34 +1,50 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ElasticPDF.Infrastructure.MinIO.Bucket;
 using Minio;
 using Minio.DataModel.Args;
 using Minio.DataModel.Notification;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Polly;
 
 namespace ElasticPDF.Infrastructure.MinIO
 {
-    public class MinIOInitializer
+    public class MinioInitializer
     {
         private readonly IMinioClient _client;
 
-        public MinIOInitializer(IMinioClientFactory factory)
+        public MinioInitializer(IMinioClientFactory factory)
         {
-            _client = factory.CreateClient();
+            _client = factory.CreateClient()
+                .WithRetryPolicy(async (executeCallback) =>
+                {
+                    var retryPolicy = Policy
+                        .Handle<HttpRequestException>(e =>
+                                e.HttpRequestError is
+                                    HttpRequestError.NameResolutionError or
+                                    HttpRequestError.ConnectionError
+                            )
+                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+                    return await retryPolicy.ExecuteAsync(executeCallback);
+                });
         }
 
         public async Task InitializeAsync()
-        {
-            var existsArgs = new BucketExistsArgs().WithBucket("my-test-bucket");
-            bool found = await _client.BucketExistsAsync(existsArgs).ConfigureAwait(false);
+            => await EnsureDocumentBucket();
 
-            if (!found)
+        private async Task EnsureDocumentBucket()
+        {
+            var bucketList = await _client.ListBucketsAsync();
+            if (!bucketList.Buckets.Any(b => b.Name == DocumentBucket.Name))
             {
-                var makeArgs = new MakeBucketArgs().WithBucket("my-test-bucket");
+                var makeArgs = new MakeBucketArgs().WithBucket(DocumentBucket.Name);
                 await _client.MakeBucketAsync(makeArgs).ConfigureAwait(false);
             }
 
-            var getArgs = new GetBucketNotificationsArgs().WithBucket("my-test-bucket");
+            await EnsureDocumentBucketNotification();
+        }
+
+        private async Task EnsureDocumentBucketNotification()
+        {
+            var getArgs = new GetBucketNotificationsArgs().WithBucket(DocumentBucket.Name);
             var bucketConfigs = await _client.GetBucketNotificationsAsync(getArgs);
 
             if (bucketConfigs.QueueConfigs.Any(c => c.Events.Any()))
@@ -41,7 +57,7 @@ namespace ElasticPDF.Infrastructure.MinIO
             bucketNotification.AddQueue(queueConfig);
 
             var argsObj = new SetBucketNotificationsArgs()
-                .WithBucket("my-test-bucket")
+                .WithBucket(DocumentBucket.Name)
                 .WithBucketNotificationConfiguration(bucketNotification);
 
             await _client.SetBucketNotificationsAsync(argsObj);
