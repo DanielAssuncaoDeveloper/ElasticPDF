@@ -10,6 +10,5 @@ namespace ElasticPDF.Api.Controllers
         {
             return Task.CompletedTask;
         }
-
     }
 }

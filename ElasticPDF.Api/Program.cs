@@ -5,10 +5,9 @@ using Minio;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
-
+    builder.Services.AddControllers();
+    builder.Services.AddOpenApi();
+    builder.Services.AddSwaggerGen();
 
 builder.Configuration
     .AddJsonFile("appsettings.json")
@@ -16,9 +15,12 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddMinio(configureClient => configureClient
-            .WithEndpoint("minio:9000")
+            .WithEndpoint(builder.Configuration.GetSection("MinIO:Endpoint").Value!)
             .WithSSL(false)
-            .WithCredentials("minio", "minio123456")
+            .WithCredentials(
+                builder.Configuration.GetSection("MinIO:User").Value!,
+                builder.Configuration.GetSection("MinIO:Password").Value!
+            )
         .Build());
 
 builder.Services.AddSingleton(x =>
