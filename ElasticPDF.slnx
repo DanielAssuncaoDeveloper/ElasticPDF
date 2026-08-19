@@ -7,4 +7,5 @@
   <Project Path="ElasticPDF.Contracts/ElasticPDF.Contracts.csproj" Id="eb170bc2-b8c1-4311-bfa4-5ee9bc2bf649" />
   <Project Path="ElasticPDF.Domain/ElasticPDF.Domain.csproj" Id="34baed33-4204-4af0-8a99-cc4f102c3bb0" />
   <Project Path="ElasticPDF.Infrastructure/ElasticPDF.Infrastructure.csproj" Id="52f3c6b5-4768-464a-bdd5-ff4ac2362b1a" />
+  <Project Path="ElasticPDF.Worker/ElasticPDF.Worker.csproj" Id="220f3d5d-b8ac-403b-8c59-5eb78e7d43cc" />
 </Solution>

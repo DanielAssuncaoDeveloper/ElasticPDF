@@ -6,11 +6,11 @@ using Polly;
 
 namespace ElasticPDF.Infrastructure.MinIO
 {
-    public class MinioInitializer
+    public class StorageInitializer
     {
         private readonly IMinioClient _client;
 
-        public MinioInitializer(IMinioClientFactory factory)
+        public StorageInitializer(IMinioClientFactory factory)
         {
             _client = factory.CreateClient()
                 .WithRetryPolicy(async (executeCallback) =>

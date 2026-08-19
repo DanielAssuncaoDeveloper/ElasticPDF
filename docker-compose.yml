@@ -32,6 +32,9 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     container_name: elasticpdf-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit_pass
     ports:
       - "5672:5672"
       - "15672:15672"

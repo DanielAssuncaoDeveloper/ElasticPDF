@@ -29,7 +29,7 @@ builder.Services.AddSingleton(x =>
         ));
 
 builder.Services.AddScoped<ElasticsearchInitializer>();
-builder.Services.AddScoped<MinioInitializer>();
+builder.Services.AddScoped<StorageInitializer>();
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
@@ -43,7 +43,7 @@ using (var scope = app.Services.CreateScope())
 {
     await Task.WhenAll(
         scope.ServiceProvider.GetRequiredService<ElasticsearchInitializer>().InitializeAsync(),
-        scope.ServiceProvider.GetRequiredService<MinioInitializer>().InitializeAsync()
+        scope.ServiceProvider.GetRequiredService<StorageInitializer>().InitializeAsync()
     );
 }
 
