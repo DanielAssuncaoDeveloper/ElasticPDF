@@ -22,7 +22,11 @@ namespace ElasticPDF.Infrastructure.Messaging
                 queue: RabbitMqQueues.DocumentProcessing,
                 durable: true,
                 exclusive: false,
-                autoDelete: false);
+                autoDelete: false,
+                arguments: new Dictionary<string, object?>() {
+                    { "x-dead-letter-exchange", "" },
+                    { "x-dead-letter-routing-key", RabbitMqQueues.DocumentProcessingDLQ }
+                });
         }
     }
 }

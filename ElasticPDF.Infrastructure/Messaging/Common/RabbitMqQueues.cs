@@ -3,5 +3,6 @@
     public class RabbitMqQueues
     {
         public const string DocumentProcessing = "document-processing-queue";
+        public const string DocumentProcessingDLQ = "document-processing-dlq";
     }
 }
