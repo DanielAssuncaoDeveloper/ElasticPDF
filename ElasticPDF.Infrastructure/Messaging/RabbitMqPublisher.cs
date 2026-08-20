@@ -26,7 +26,6 @@ namespace ElasticPDF.Infrastructure.Messaging
                 mandatory: false,
                 body: body,
                 basicProperties: new BasicProperties());
-
         }
     }
 }

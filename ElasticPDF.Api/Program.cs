@@ -1,6 +1,8 @@
 using Elastic.Clients.Elasticsearch;
 using ElasticPDF.Infrastructure.Elasticsearch;
+using ElasticPDF.Infrastructure.Messaging;
 using ElasticPDF.Infrastructure.MinIO;
+using ElasticPDF.Infrastructure.Storage;
 using Minio;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,22 +16,9 @@ builder.Configuration
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
     .AddEnvironmentVariables();
 
-builder.Services.AddMinio(configureClient => configureClient
-            .WithEndpoint(builder.Configuration.GetSection("MinIO:Endpoint").Value!)
-            .WithSSL(false)
-            .WithCredentials(
-                builder.Configuration.GetSection("MinIO:User").Value!,
-                builder.Configuration.GetSection("MinIO:Password").Value!
-            )
-        .Build());
-
-builder.Services.AddSingleton(x =>
-    new ElasticsearchClient(
-        new Uri(builder.Configuration.GetSection("Elasticsearch:Url").Value!)
-        ));
-
-builder.Services.AddScoped<ElasticsearchInitializer>();
-builder.Services.AddScoped<StorageInitializer>();
+builder.Services.AddStorage(builder.Configuration);
+builder.Services.AddRabbitMq(builder.Configuration);
+builder.Services.AddElasticsearch(builder.Configuration);
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
