@@ -19,12 +19,18 @@ namespace ElasticPDF.Infrastructure.Messaging
             await using var channel = await connection.CreateChannelAsync();
 
             await channel.QueueDeclareAsync(
+                queue: RabbitMqQueues.DocumentProcessingDLQ,
+                durable: true,
+                exclusive: false,
+                autoDelete: false);
+
+            await channel.QueueDeclareAsync(
                 queue: RabbitMqQueues.DocumentProcessing,
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
                 arguments: new Dictionary<string, object?>() {
-                    { "x-dead-letter-exchange", "" },
+                    { "x-dead-letter-exchange", string.Empty },
                     { "x-dead-letter-routing-key", RabbitMqQueues.DocumentProcessingDLQ }
                 });
         }

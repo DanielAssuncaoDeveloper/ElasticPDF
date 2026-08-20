@@ -32,7 +32,8 @@ using (var scope = app.Services.CreateScope())
 {
     await Task.WhenAll(
         scope.ServiceProvider.GetRequiredService<ElasticsearchInitializer>().InitializeAsync(),
-        scope.ServiceProvider.GetRequiredService<StorageInitializer>().InitializeAsync()
+        scope.ServiceProvider.GetRequiredService<StorageInitializer>().InitializeAsync(),
+        scope.ServiceProvider.GetRequiredService<RabbitMqQueueInitializer>().InitializeAsync()
     );
 }
 
